@@ -1,727 +1,459 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fool School</title>
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bluff Master - AI Fibbage</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: linear-gradient(135deg, #181824, #28283d); color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; padding-bottom: 70px; transition: background 0.5s ease; }
-    body.final-round { background: linear-gradient(135deg, #2a0808, #4a1515); }
-    .screen { display: none; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 30px; width: 100%; max-width: 520px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-    .screen.active { display: block; }
-    h1 { font-size: 2.5rem; font-weight: 800; background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
-    .subtitle { color: #a0a0c0; font-size: 0.95rem; margin-bottom: 25px; }
-    .btn { background: #48dbfb; color: #1e1e2f; border: none; padding: 14px 20px; font-size: 1.05rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 10px; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(72, 219, 251, 0.4); }
-    .btn-host { background: linear-gradient(135deg, #ff9ff3, #feca57); color: #1e1e2f; }
-    .btn-join { background: linear-gradient(135deg, #48dbfb, #1dd1a1); color: #1e1e2f; }
-    .btn-sec { background: rgba(255,255,255,0.15); color: #fff; }
-    .input-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-size: 1.1rem; margin-bottom: 15px; outline: none; text-align: center; }
-    .code-box { font-size: 3rem; font-weight: 900; letter-spacing: 6px; color: #feca57; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border: 2px dashed #feca57; margin: 15px 0; }
-    .player-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 15px 0; min-height: 40px; }
-    .player-chip { background: rgba(72, 219, 251, 0.2); border: 1px solid #48dbfb; color: #48dbfb; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
-    .question-box { font-size: 1.25rem; font-weight: 600; line-height: 1.4; padding: 18px; background: rgba(0,0,0,0.3); border-radius: 12px; border-left: 4px solid #48dbfb; margin-bottom: 20px; text-align: left; }
-    .blank-hl { color: #feca57; text-decoration: underline; font-weight: 800; }
-    .choice-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 14px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s; width: 100%; margin-bottom: 8px; }
-    .choice-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); border-color: #48dbfb; }
-    .reveal-card { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; margin-bottom: 10px; text-align: left; }
-    .reveal-answer { font-size: 1.1rem; font-weight: 700; }
-    .reveal-author { font-size: 0.85rem; color: #feca57; }
-    .reveal-voters { font-size: 0.85rem; color: #1dd1a1; margin-top: 4px; }
-    .truth { border: 2px solid #1dd1a1; }
-    .timer-badge { font-size: 1.5rem; font-weight: 900; background: rgba(0,0,0,0.4); padding: 8px 18px; border-radius: 30px; display: inline-block; margin-bottom: 15px; border: 2px solid #48dbfb; color: #48dbfb; }
-    .timer-badge.warning { border-color: #ff4757; color: #ff4757; animation: pulseRed 0.6s infinite alternate; }
-    .round-badge { background: #feca57; color: #1e1e2f; font-weight: 800; padding: 4px 12px; border-radius: 8px; font-size: 0.85rem; display: inline-block; margin-bottom: 10px; }
+    body { background: #121212; color: #fff; text-align: center; padding: 20px; transition: background-color 0.3s; padding-bottom: 60px; }
+    .card { background: #1e1e2e; padding: 25px; border-radius: 12px; max-width: 600px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); position: relative; transition: border 0.3s; }
+    h1 { color: #ff0055; margin-bottom: 15px; font-size: 2.2rem; }
+    input, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px; border: none; font-size: 1.1rem; }
+    input { background: #2a2a3c; color: white; }
+    button { background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button:hover { background: #ff2a75; }
+    .room-code { font-size: 3rem; font-weight: bold; letter-spacing: 5px; color: #00e5ff; }
+    .option-btn { background: #2a2a3c; text-align: left; margin: 8px 0; }
+    .hidden { display: none; }
+    ul { list-style: none; text-align: left; margin: 10px 0; }
+    li { padding: 8px 0; border-bottom: 1px solid #333; }
+    .audio-controls { position: absolute; top: 15px; right: 15px; background: #2a2a3c; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; border: 1px solid #444; z-index: 10; }
+    .timer-bar-container { width: 100%; background: #2a2a3c; height: 12px; border-radius: 6px; overflow: hidden; margin: 15px 0; }
+    .timer-bar { height: 100%; background: #00e5ff; width: 100%; transition: width 1s linear, background-color 0.3s; }
+    .badge { display: inline-block; background: #ff0055; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; }
     
-    #host-bar { display: none; position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(24, 24, 36, 0.95); border: 1px solid #feca57; color: #fff; padding: 8px 20px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.6); z-index: 999; }
-    #host-bar span { color: #feca57; letter-spacing: 2px; font-weight: 900; }
+    .room-code-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #181824; padding: 8px; font-size: 0.9rem; color: #888; border-top: 1px solid #2a2a3c; z-index: 100; }
+    .room-code-footer span { color: #00e5ff; font-weight: bold; letter-spacing: 2px; font-size: 1rem; }
 
-    @keyframes pulseRed { from { transform: scale(1); } to { transform: scale(1.1); } }
+    @keyframes warningPulse {
+      0% { background-color: #121212; }
+      50% { background-color: #3b0010; }
+      100% { background-color: #121212; }
+    }
+    
+    @keyframes cardWarningPulse {
+      0% { border: 2px solid transparent; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+      50% { border: 2px solid #ff0055; box-shadow: 0 0 25px rgba(255, 0, 85, 0.6); }
+      100% { border: 2px solid transparent; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    }
+
+    body.urgent-timer {
+      animation: warningPulse 0.8s infinite;
+    }
+
+    body.urgent-timer .card {
+      animation: cardWarningPulse 0.8s infinite;
+    }
   </style>
 </head>
-<body>
+<body onclick="userInteracted()">
 
-  <div id="host-bar">ROOM CODE: <span id="host-bar-code">----</span></div>
-
-  <!-- MAIN MENU -->
-  <div id="screen-main" class="screen active">
-    <h1>Fool School</h1>
-    <p class="subtitle">The Fill-in-the-Blank Lie Game</p>
-    <button class="btn btn-host" onclick="openHostLobby()">Host New Game</button>
-    <button class="btn btn-join" onclick="openJoinScreen()">Join Game</button>
+  <div id="view-landing" class="card">
+    <div class="audio-controls" onclick="toggleMute(event)" id="landing-mute-btn">🔊 Audio: ON</div>
+    <h1>BLUFF MASTER</h1>
+    <button onclick="showHostSetup()">Host Game (TV / Tablet)</button>
+    <button onclick="showPlayerSetup()">Join Game (Phone)</button>
   </div>
 
-  <!-- HOST LOBBY -->
-  <div id="screen-host-lobby" class="screen">
-    <h2>Room Code</h2>
-    <div class="code-box" id="host-code-display">...</div>
-    <p class="subtitle">Joined Players (<span id="player-count">0</span>):</p>
-    <div class="player-list" id="host-player-list"></div>
-    <button class="btn btn-host" onclick="startFibbageGame()">Start Game</button>
-    <button class="btn btn-sec" onclick="addBotPlayer()">+ Add AI Bot Player</button>
-    <button class="btn btn-sec" onclick="location.reload()">Cancel</button>
-  </div>
-
-  <!-- JOIN SCREEN -->
-  <div id="screen-join" class="screen">
-    <h2>Join Game</h2>
-    <p class="subtitle">Enter session details</p>
-    <input type="text" id="join-name" class="input-field" placeholder="Your Name" maxlength="12">
-    <input type="text" id="join-code" class="input-field" placeholder="4-Letter Room Code" maxlength="4" style="text-transform:uppercase;">
-    <button class="btn btn-join" onclick="submitPlayerJoin()">Enter Room</button>
-    <button class="btn btn-sec" onclick="showScreen('screen-main')">Back</button>
-  </div>
-
-  <!-- PLAYER WAITING LOBBY -->
-  <div id="screen-player-wait" class="screen">
-    <h2>You're In!</h2>
-    <p class="subtitle" id="player-welcome-msg">Connecting to host...</p>
-    <div style="font-size: 3rem; margin: 20px 0;">⏳</div>
-  </div>
-
-  <!-- STAGE 1: SUBMIT LIES -->
-  <div id="screen-submit-lie" class="screen">
-    <div id="round-indicator" class="round-badge">ROUND 1</div>
-    <div class="timer-badge" id="timer-lie">45</div>
-    <p class="subtitle" style="color:#ff9ff3; font-weight:700;" id="question-cat">Category</p>
-    <div class="question-box" id="question-prompt-submit">Prompt</div>
-    <div id="lie-input-container">
-      <input type="text" id="user-lie-input" class="input-field" placeholder="Enter a convincing lie..." maxlength="30">
-      <button class="btn btn-host" onclick="submitLie()">Submit Lie</button>
+  <div id="view-host" class="card hidden">
+    <div class="audio-controls" onclick="toggleMute(event)" id="mute-btn">🔊 Audio: ON</div>
+    <h1>HOST SCREEN</h1>
+    <div id="host-lobby">
+      <p>Join at this URL on your phone!</p>
+      <p>ROOM CODE:</p>
+      <div id="room-code-display" class="room-code">----</div>
+      <h3>Players Joined:</h3>
+      <ul id="player-list"></ul>
+      <button onclick="startRound()">Start Game</button>
     </div>
-    <div id="lie-submitted-msg" style="display:none;">
-      <p style="color:#1dd1a1; font-weight:700;">Lie Received!</p>
-      <p class="subtitle">Waiting for remaining players...</p>
+
+    <div id="host-gameplay" class="hidden">
+      <div id="round-badge" class="badge">Round 1/6 (1x Points)</div>
+      <div class="timer-bar-container"><div id="host-timer-bar" class="timer-bar"></div></div>
+      <h2 id="host-question" style="color: #00e5ff; margin-bottom: 20px;"></h2>
+      <p id="host-status" style="font-size: 1.2rem;"></p>
+      <div id="host-reveal" class="hidden"></div>
+      <button id="next-btn" class="hidden" onclick="startRound()">Next Round</button>
     </div>
   </div>
 
-  <!-- STAGE 2: VOTING -->
-  <div id="screen-vote" class="screen">
-    <div class="timer-badge" id="timer-vote">45</div>
-    <h2>Find the Truth!</h2>
-    <div class="question-box" id="question-prompt-vote">Prompt</div>
-    <div id="choices-container"></div>
-    <div id="vote-submitted-msg" style="display:none;">
-      <p style="color:#1dd1a1; font-weight:700;">Vote Locked In!</p>
-      <p class="subtitle">Waiting for remaining votes...</p>
+  <div id="view-player" class="card hidden">
+    <div id="player-join">
+      <h1>JOIN GAME</h1>
+      <input type="text" id="join-code" placeholder="4-Letter Room Code" style="text-transform: uppercase;">
+      <input type="text" id="join-name" placeholder="Your Name">
+      <button onclick="joinRoom()">Join Room</button>
+    </div>
+
+    <div id="player-gameplay" class="hidden">
+      <div id="player-round-badge" class="badge">Round 1/6</div>
+      <div class="timer-bar-container"><div id="player-timer-bar" class="timer-bar"></div></div>
+      <p id="player-status" style="color: #00e5ff; font-weight: bold; margin-bottom: 15px;"></p>
+      
+      <div id="lie-form">
+        <input type="text" id="lie-input" placeholder="Type your believable lie...">
+        <button onclick="submitLie()">Submit Lie</button>
+      </div>
+
+      <div id="vote-form" class="hidden">
+        <h3>Pick the Real Answer:</h3>
+        <div id="options-container"></div>
+      </div>
     </div>
   </div>
 
-  <!-- STAGE 3: REVEAL -->
-  <div id="screen-reveal" class="screen">
-    <h2>The Truth Unveiled</h2>
-    <p class="subtitle">Here is what everyone picked:</p>
-    <div id="reveal-container"></div>
-    <button id="host-next-btn" class="btn btn-host" style="display:none;" onclick="nextRoundOrScores()">Next Round</button>
-  </div>
-
-  <!-- STAGE 4: SCORES -->
-  <div id="screen-scores" class="screen">
-    <h2>Leaderboard</h2>
-    <div id="leaderboard-container" style="margin:20px 0;"></div>
-    <button id="host-continue-btn" class="btn btn-host" style="display:none;" onclick="nextQuestion()">Next Question</button>
+  <div id="footer-code" class="room-code-footer hidden">
+    ROOM CODE: <span id="footer-code-display">----</span>
   </div>
 
   <script>
-    /* AUDIO SYNTHESIZER & MUSIC LOOPS */
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    let actx = null;
+    const socket = io();
+    let currentRoom = '';
+    let isHost = false;
+    let isMuted = false;
+    let audioCtx = null;
     let musicInterval = null;
-    let musicType = 'none';
+    let currentPhase = 'LANDING';
+    let currentUrgentState = false;
+    let activeRoundNumber = 1;
 
-    function initAudio() { if (!actx) actx = new AudioCtx(); }
-
-    function playSound(type) {
+    function userInteracted() {
       initAudio();
-      if (!actx) return;
-      const now = actx.currentTime;
-      const osc = actx.createOscillator();
-      const gain = actx.createGain();
-      osc.connect(gain);
-      gain.connect(actx.destination);
-
-      if (type === 'click') {
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-        osc.start(now); osc.stop(now + 0.08);
-      } else if (type === 'tick') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(1000, now);
-        gain.gain.setValueAtTime(0.05, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-        osc.start(now); osc.stop(now + 0.04);
-      } else if (type === 'correct') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, now);
-        osc.frequency.setValueAtTime(659.25, now + 0.1);
-        osc.frequency.setValueAtTime(783.99, now + 0.2);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-        osc.start(now); osc.stop(now + 0.35);
-      } else if (type === 'fool') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.linearRampToValueAtTime(90, now + 0.25);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-        osc.start(now); osc.stop(now + 0.25);
+      if ((currentPhase === 'LANDING' || currentPhase === 'GAMEOVER') && !musicInterval && !isMuted) {
+        playChillTheme();
       }
     }
 
-    function startBackgroundMusic(type) {
-      stopBackgroundMusic();
-      initAudio();
-      if (!actx) return;
-      musicType = type;
-      let step = 0;
-
-      const notesPlayful = [261.63, 329.63, 392.00, 523.25, 493.88, 392.00, 329.63, 293.66];
-      const notesHighStakes = [130.81, 155.56, 196.00, 233.08, 196.00, 155.56, 130.81, 110.00];
-
-      musicInterval = setInterval(() => {
-        if (!actx) return;
-        const now = actx.currentTime;
-        const osc = actx.createOscillator();
-        const gain = actx.createGain();
-        osc.connect(gain);
-        gain.connect(actx.destination);
-
-        const notes = (musicType === 'highstakes') ? notesHighStakes : notesPlayful;
-        osc.type = (musicType === 'highstakes') ? 'sawtooth' : 'triangle';
-        
-        osc.frequency.setValueAtTime(notes[step % notes.length], now);
-        gain.gain.setValueAtTime(0.04, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-        
-        osc.start(now);
-        osc.stop(now + 0.25);
-        step++;
-      }, 300);
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
     }
 
-    function stopBackgroundMusic() {
+    function playTone(freq, type, duration, delay = 0, vol = 0.1) {
+      if (isMuted || !audioCtx) return;
+      setTimeout(() => {
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
+      }, delay);
+    }
+
+    function stopMusic() {
       if (musicInterval) {
         clearInterval(musicInterval);
         musicInterval = null;
       }
-      musicType = 'none';
     }
 
-    /* NATURAL WITTY MALE ANNOUNCER VOICE (HOST ONLY) */
-    let maleVoice = null;
-    function loadMaleVoice() {
-      const voices = window.speechSynthesis.getVoices();
-      maleVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Microsoft David') || v.name.includes('Ryan') || v.name.includes('Oliver'))) ||
-                  voices.find(v => v.lang.startsWith('en')) || null;
-    }
-    window.speechSynthesis.onvoiceschanged = loadMaleVoice;
-    loadMaleVoice();
-
-    function speakAnnouncer(text) {
-      if (!isHost) return;
-      if (!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      if (maleVoice) utter.voice = maleVoice;
-      utter.pitch = 0.85;
-      utter.rate = 1.05;
-      window.speechSynthesis.speak(utter);
-    }
-
-    /* GAME STATE */
-    let isHost = false;
-    let roomCode = '';
-    let myName = '';
-    let players = [];
-    let currentQ = null;
-    let currentQuestionIndex = 0; // 0 to 5 (6 questions total)
-    let timerInterval = null;
-    
-    let peer = null;
-    let hostConn = null;
-    let clientConns = [];
-
-    /* INFINITE PROCEDURAL QUESTION GENERATOR (NO REPEATS) */
-    const categoriesList = ["Weird Laws", "Bizarre Crimes", "Unusual Auctions", "Animal Antics", "Local Ohio Lore", "Storefront Surprises", "Highway Hijinks", "Museum Mishaps"];
-    
-    const nounPool = [
-      "a stolen grandfather clock", "a live emotional support raccoon", "three gallons of expired gravy", "a golden toilet plunger", 
-      "a stolen inflatable gorilla", "a crate of vintage mannequin hands", "a motorized shopping cart", "a taxidermied badger wearing goggles",
-      "a bucket of wet cement", "a suspiciously heavy hollow log", "a bag of acoustic foam tiles", "a medieval broadsword",
-      "a custom neon sign saying 'No'", "a massive jar of pickled quail eggs", "a 90s karaoke machine", "a bowling ball collection"
-    ];
-
-    const templatePool = [
-      { q: "During a routine traffic stop, police were stunned to find the trunk entirely filled with ____.", type: "object" },
-      { q: "A local city council meeting erupted into chaos when a citizen stood up and brandished ____.", type: "object" },
-      { q: "An online marketplace seller was arrested after trying to fence ____.", type: "object" },
-      { q: "Museum security chased down a visitor who attempted to smuggle out ____ hidden inside a winter coat.", type: "object" },
-      { q: "Health inspectors shut down a festival booth after discovering they were using ____ as a secret ingredient.", type: "object" }
-    ];
-
-    const usedQuestionsSignatures = new Set();
-
-    function generateUniqueQuestion() {
-      let attempts = 0;
-      while (attempts < 100) {
-        const cat = categoriesList[Math.floor(Math.random() * categoriesList.length)];
-        const temp = templatePool[Math.floor(Math.random() * templatePool.length)];
-        const truth = nounPool[Math.floor(Math.random() * nounPool.length)];
-        
-        // Pick 3 unique random decoys from the noun pool excluding the truth
-        let availableDecoys = nounPool.filter(n => n !== truth);
-        availableDecoys.sort(() => Math.random() - 0.5);
-        let decoys = availableDecoys.slice(0, 3);
-
-        const signature = temp.q + "|" + truth;
-        if (!usedQuestionsSignatures.has(signature)) {
-          usedQuestionsSignatures.add(signature);
-          return { cat, q: temp.q, truth, decoys };
-        }
-        attempts++;
-      }
-      // Fallback if signature space exhausted
-      return {
-        cat: "Random Oddities",
-        q: "Custom investigators discovered a hidden room completely packed with ____.",
-        truth: "a pile of rubber ducks",
-        decoys: ["old telephone books", "cardboard cutouts of Nicolas Cage", "broken toaster ovens"]
-      };
-    }
-
-    function showScreen(id) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    }
-
-    function startTimer(elementId, onComplete) {
-      clearInterval(timerInterval);
-      let timeLeft = 45;
-      const el = document.getElementById(elementId);
-      el.classList.remove('warning');
-      el.innerText = timeLeft;
-
-      timerInterval = setInterval(() => {
-        timeLeft--;
-        el.innerText = timeLeft;
-        if (timeLeft <= 10) {
-          el.classList.add('warning');
-          playSound('tick');
-          broadcastSound('tick');
-        }
-        if (timeLeft <= 0) {
-          clearInterval(timerInterval);
-          if (onComplete) onComplete();
-        }
-      }, 1000);
-    }
-
-    function stopTimer() { clearInterval(timerInterval); }
-
-    function broadcastToAll(data) {
-      clientConns.forEach(c => { if(c && c.open) c.send(data); });
-    }
-
-    function broadcastSound(type) {
-      broadcastToAll({ type: 'PLAY_SOUND', sound: type });
-    }
-
-    /* HOST LOBBY */
-    function openHostLobby() {
+    function playChillTheme() {
+      stopMusic();
+      if (isMuted) return;
       initAudio();
+      const notes = [196.00, 246.94, 293.66, 369.99, 293.66, 246.94];
+      let step = 0;
+      musicInterval = setInterval(() => {
+        playTone(notes[step % notes.length], 'sine', 0.25, 0, 0.04);
+        step++;
+      }, 260);
+    }
+
+    function playLobbyMusic() {
+      stopMusic();
+      if (!isHost || isMuted) return;
+      initAudio();
+      const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+      let step = 0;
+      musicInterval = setInterval(() => {
+        playTone(notes[step % notes.length], 'sine', 0.2, 0, 0.05);
+        step++;
+      }, 300);
+    }
+
+    function playThinkingMusic(isUrgent = false, isFinalRound = false) {
+      stopMusic();
+      if (!isHost || isMuted) return;
+      initAudio();
+
+      let notes, tempo, type, vol;
+
+      if (isFinalRound) {
+        // High stakes intense track for Round 6 (Final Fibbage)
+        notes = isUrgent 
+          ? [110.00, 116.54, 123.47, 130.81, 123.47, 116.54]
+          : [110.00, 130.81, 164.81, 130.81];
+        tempo = isUrgent ? 140 : 280;
+        type = 'sawtooth';
+        vol = isUrgent ? 0.12 : 0.1;
+      } else {
+        notes = isUrgent 
+          ? [220.00, 233.08, 261.63, 233.08]
+          : [146.83, 174.61, 220.00, 174.61];
+        tempo = isUrgent ? 220 : 500;
+        type = isUrgent ? 'sawtooth' : 'triangle';
+        vol = isUrgent ? 0.09 : 0.08;
+      }
+
+      let step = 0;
+      musicInterval = setInterval(() => {
+        playTone(notes[step % notes.length], type, 0.2, 0, vol);
+        step++;
+      }, tempo);
+    }
+
+    function playJoinSound() { initAudio(); playTone(440, 'sine', 0.1, 0, 0.1); playTone(880, 'sine', 0.15, 80, 0.1); }
+    function playTickSound() { initAudio(); playTone(800, 'square', 0.05, 0, 0.03); }
+
+    function playRoundRevealSound(round) {
+      initAudio();
+      if (round <= 3) {
+        playTone(300, 'triangle', 0.2, 0, 0.08);
+        playTone(450, 'triangle', 0.25, 120, 0.08);
+      } else if (round <= 5) {
+        playTone(400, 'sawtooth', 0.15, 0, 0.09);
+        playTone(600, 'sawtooth', 0.15, 90, 0.09);
+        playTone(800, 'sawtooth', 0.3, 180, 0.1);
+      } else {
+        for (let i = 0; i < 18; i++) {
+          playTone(150 + Math.random() * 800, 'square', 0.06, i * 40, 0.08);
+        }
+      }
+    }
+
+    function playGrandFinaleSound() {
+      initAudio();
+      playTone(523.25, 'triangle', 0.3, 0, 0.12);
+      playTone(659.25, 'triangle', 0.3, 120, 0.12);
+      playTone(783.99, 'triangle', 0.3, 240, 0.12);
+      playTone(1046.50, 'triangle', 0.8, 360, 0.15);
+    }
+
+    function toggleMute(e) {
+      if (e) e.stopPropagation();
+      isMuted = !isMuted;
+      const label = isMuted ? '🔇 Audio: OFF' : '🔊 Audio: ON';
+      document.getElementById('mute-btn').innerText = label;
+      document.getElementById('landing-mute-btn').innerText = label;
+
+      if (isMuted) {
+        stopMusic();
+      } else {
+        if (currentPhase === 'LANDING' || currentPhase === 'GAMEOVER') playChillTheme();
+        else if (currentPhase === 'LOBBY' && isHost) playLobbyMusic();
+        else if ((currentPhase === 'SUBMITTING' || currentPhase === 'VOTING') && isHost) playThinkingMusic(currentUrgentState, activeRoundNumber === 6);
+      }
+    }
+
+    function hideAll() {
+      ['view-landing', 'view-host', 'view-player'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+    }
+
+    function showHostSetup() {
+      hideAll();
+      currentPhase = 'LOBBY';
+      document.getElementById('view-host').classList.remove('hidden');
       isHost = true;
-      roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-      myName = "HOST";
-      players = [];
-      clientConns = [];
-      currentQuestionIndex = 0;
-      usedQuestionsSignatures.clear();
-
-      document.getElementById('host-code-display').innerText = roomCode;
-      document.getElementById('host-bar-code').innerText = roomCode;
-      document.getElementById('host-next-btn').style.display = 'block';
-      document.getElementById('host-continue-btn').style.display = 'block';
-
-      peer = new Peer('FS-' + roomCode);
-
-      peer.on('open', () => {
-        renderHostLobby();
-        showScreen('screen-host-lobby');
-        speakAnnouncer("Welcome to Fool School. Let's see who can lie the best and spot the truth.");
-      });
-
-      peer.on('connection', (conn) => {
-        clientConns.push(conn);
-        conn.on('data', (data) => handleHostIncomingData(conn, data));
-      });
-    }
-
-    function handleHostIncomingData(conn, data) {
-      if (data.type === 'JOIN_REQ') {
-        if (!players.some(p => p.name === data.name)) {
-          players.push({ name: data.name, score: 0, currentLie: '', currentVote: '' });
-          playSound('click');
-          broadcastSound('click');
-          speakAnnouncer(data.name + " just walked into class. Try not to embarrass yourself.");
-        }
-        renderHostLobby();
-        conn.send({ type: 'JOIN_OK' });
-        broadcastToAll({ type: 'SYNC_PLAYERS', players });
-      }
-      if (data.type === 'SUBMIT_LIE') {
-        const p = players.find(x => x.name === data.name);
-        if (p) p.currentLie = data.lie;
-        if (players.every(p => p.currentLie !== '')) startVotingStage();
-      }
-      if (data.type === 'SUBMIT_VOTE') {
-        const p = players.find(x => x.name === data.name);
-        if (p) p.currentVote = data.vote;
-        if (players.every(p => p.currentVote !== '')) calculateAndShowReveal();
-      }
-    }
-
-    function renderHostLobby() {
-      document.getElementById('player-count').innerText = players.length;
-      document.getElementById('host-player-list').innerHTML = players.map(p => `<div class="player-chip">${p.name}</div>`).join('');
-    }
-
-    function addBotPlayer() {
       initAudio();
-      playSound('click');
-      broadcastSound('click');
-      const botName = "Bot_" + (players.length + 1);
-      players.push({ name: botName, score: 0, currentLie: '', currentVote: '' });
-      speakAnnouncer("Added an AI bot. It has zero human emotion and zero shame.");
-      renderHostLobby();
-      broadcastToAll({ type: 'SYNC_PLAYERS', players });
+      socket.emit('createRoom');
+      playLobbyMusic();
     }
 
-    /* JOIN LOBBY */
-    function openJoinScreen() {
-      initAudio();
-      playSound('click');
-      isHost = false;
-      showScreen('screen-join');
+    function showPlayerSetup() {
+      hideAll();
+      currentPhase = 'PLAYER_JOIN';
+      stopMusic();
+      document.getElementById('view-player').classList.remove('hidden');
     }
 
-    function submitPlayerJoin() {
-      initAudio();
-      playSound('click');
-      myName = document.getElementById('join-name').value.trim();
-      const code = document.getElementById('join-code').value.trim().toUpperCase();
-
-      if (!myName || !code) return alert("Please enter your name and room code!");
-
-      showScreen('screen-player-wait');
-      document.getElementById('player-welcome-msg').innerText = `Connecting to room ${code}...`;
-
-      peer = new Peer();
-      peer.on('open', () => {
-        hostConn = peer.connect('FS-' + code);
-        
-        hostConn.on('open', () => {
-          document.getElementById('player-welcome-msg').innerText = `Connected! Waiting for host to start...`;
-          hostConn.send({ type: 'JOIN_REQ', name: myName });
-        });
-
-        hostConn.on('data', (data) => handleClientIncomingData(data));
-      });
-    }
-
-    function handleClientIncomingData(data) {
-      if (data.type === 'SYNC_PLAYERS') players = data.players;
-      if (data.type === 'PLAY_SOUND') playSound(data.sound);
-      if (data.type === 'START_Q') {
-        currentQ = data.question;
-        currentQuestionIndex = data.qIndex;
-        players = data.players;
-        setupSubmitLieScreen();
-      }
-      if (data.type === 'START_VOTE') {
-        players = data.players;
-        setupVotingScreen(data.choices);
-      }
-      if (data.type === 'START_REVEAL') {
-        players = data.players;
-        setupRevealScreen();
-      }
-      if (data.type === 'START_SCORES') {
-        players = data.players;
-        setupScoresScreen();
+    function updateFooterCode(code) {
+      if (code) {
+        document.getElementById('footer-code-display').innerText = code;
+        document.getElementById('footer-code').classList.remove('hidden');
       }
     }
 
-    /* GAMEPLAY LOOP & ROUND STRUCTURE */
-    function startFibbageGame() {
-      playSound('click');
-      broadcastSound('click');
-      if (isHost) document.getElementById('host-bar').style.display = 'block';
-      if (players.length === 0) addBotPlayer();
-      currentQuestionIndex = 0;
-      nextQuestion();
-    }
+    socket.on('roomCreated', ({ roomCode }) => {
+      currentRoom = roomCode.toUpperCase();
+      document.getElementById('room-code-display').innerText = currentRoom;
+      updateFooterCode(currentRoom);
+    });
 
-    function nextQuestion() {
-      if (currentQuestionIndex >= 6) {
-        speakAnnouncer("The game has concluded. Let's see who takes home the gold.");
-        showScreen('screen-scores');
-        return;
-      }
+    socket.on('updatePlayers', (players) => {
+      playJoinSound();
+      const list = document.getElementById('player-list');
+      list.innerHTML = players.map(p => `<li>${p.name} - ${p.score} pts</li>`).join('');
+    });
 
-      currentQ = generateUniqueQuestion();
-      players.forEach(p => { p.currentLie = ''; p.currentVote = ''; });
+    socket.on('hostStatusUpdate', (msg) => {
+      if (isHost) document.getElementById('host-status').innerText = msg;
+    });
 
-      const botDecoys = [...currentQ.decoys].sort(() => Math.random() - 0.5);
-      players.filter(p => p.name.startsWith('Bot_')).forEach((b, i) => {
-        b.currentLie = botDecoys[i % botDecoys.length];
-      });
-
-      // Manage background styling & music based on round
-      if (currentQuestionIndex === 5) {
-        document.body.classList.add('final-round');
-        startBackgroundMusic('highstakes');
-      } else {
-        document.body.classList.remove('final-round');
-        startBackgroundMusic('playful');
-      }
-
-      broadcastToAll({ type: 'START_Q', question: currentQ, qIndex: currentQuestionIndex, players });
-      setupSubmitLieScreen();
-    }
-
-    function setupSubmitLieScreen() {
-      showScreen('screen-submit-lie');
+    socket.on('timerUpdate', ({ timeLeft }) => {
+      const pct = (timeLeft / 45) * 100;
+      const hostBar = document.getElementById('host-timer-bar');
+      const playerBar = document.getElementById('player-timer-bar');
       
-      let roundText = "ROUND 1";
-      let multiplierText = "1x Points";
-      if (currentQuestionIndex >= 3 && currentQuestionIndex <= 4) {
-        roundText = "ROUND 2";
-        multiplierText = "2x Points";
-      } else if (currentQuestionIndex === 5) {
-        roundText = "FINAL FIBBAGE (ROUND 3)";
-        multiplierText = "3x Points";
-      }
-
-      document.getElementById('round-indicator').innerText = `${roundText} (${multiplierText})`;
-      document.getElementById('question-cat').innerText = currentQ.cat;
-      document.getElementById('question-prompt-submit').innerHTML = currentQ.q.replace("____", '<span class="blank-hl">__________</span>');
-      document.getElementById('lie-input-container').style.display = 'block';
-      document.getElementById('lie-submitted-msg').style.display = 'none';
-      document.getElementById('user-lie-input').value = '';
-
-      if (currentQuestionIndex === 5) {
-        speakAnnouncer("Final Fibbage. Points are tripled. Do not choke now.");
-      } else {
-        speakAnnouncer("Category: " + currentQ.cat + ". Write your lie.");
-      }
-
-      startTimer('timer-lie', () => {
-        if (document.getElementById('lie-input-container').style.display !== 'none') {
-          document.getElementById('user-lie-input').value = currentQ.decoys[0];
-          submitLie();
+      [hostBar, playerBar].forEach(bar => {
+        if (bar) {
+          bar.style.width = pct + '%';
+          bar.style.backgroundColor = timeLeft <= 10 ? '#ff0055' : '#00e5ff';
         }
       });
+
+      if (timeLeft <= 10 && !currentUrgentState) {
+        currentUrgentState = true;
+        document.body.classList.add('urgent-timer');
+        if (isHost) playThinkingMusic(true, activeRoundNumber === 6);
+      } else if (timeLeft > 10 && currentUrgentState) {
+        currentUrgentState = false;
+        document.body.classList.remove('urgent-timer');
+      }
+    });
+
+    socket.on('newRound', ({ question, currentRound, multiplier }) => {
+      currentPhase = 'SUBMITTING';
+      activeRoundNumber = currentRound;
+      currentUrgentState = false;
+      document.body.classList.remove('urgent-timer');
+
+      const roundLabel = currentRound === 6 ? 'FINAL FIBBAGE (3x Points!)' : `Round ${currentRound}/6 (${multiplier}x Points)`;
+
+      if (isHost) {
+        playThinkingMusic(false, currentRound === 6);
+        document.getElementById('host-lobby').classList.add('hidden');
+        document.getElementById('host-gameplay').classList.remove('hidden');
+        document.getElementById('host-reveal').classList.add('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('round-badge').innerText = roundLabel;
+        document.getElementById('host-question').innerText = question;
+        document.getElementById('host-status').innerText = 'Waiting for player lies...';
+      } else {
+        document.getElementById('player-join').classList.add('hidden');
+        document.getElementById('player-gameplay').classList.remove('hidden');
+        document.getElementById('lie-form').classList.remove('hidden');
+        document.getElementById('vote-form').classList.add('hidden');
+        document.getElementById('player-round-badge').innerText = roundLabel;
+        document.getElementById('player-status').innerText = question;
+        document.getElementById('lie-input').value = '';
+      }
+    });
+
+    function startRound() {
+      socket.emit('startRound', currentRoom);
     }
+
+    function joinRoom() {
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      const name = document.getElementById('join-name').value.trim();
+      if (code && name) {
+        currentRoom = code;
+        socket.emit('joinRoom', { roomCode: code, name });
+      }
+    }
+
+    socket.on('joinedSuccess', ({ roomCode }) => {
+      currentRoom = roomCode.toUpperCase();
+      updateFooterCode(currentRoom);
+      document.getElementById('player-join').classList.add('hidden');
+      document.getElementById('player-gameplay').classList.remove('hidden');
+      document.getElementById('player-status').innerText = 'Connected! Waiting for host...';
+      document.getElementById('lie-form').classList.add('hidden');
+    });
 
     function submitLie() {
-      stopTimer();
-      playSound('click');
-      broadcastSound('click');
-      let lieInput = document.getElementById('user-lie-input');
-      let lie = lieInput.value.trim() || currentQ.decoys[0];
-      
-      if (lie.toLowerCase() === currentQ.truth.toLowerCase()) {
-        alert("That's the right answer! Give a convincing lie instead.");
-        lieInput.value = "";
-        return;
+      const lie = document.getElementById('lie-input').value;
+      if (lie) {
+        socket.emit('submitLie', { roomCode: currentRoom, lie });
+        document.getElementById('lie-form').classList.add('hidden');
+        document.getElementById('player-status').innerText = 'Lie submitted! Waiting for others...';
       }
+    }
 
-      document.getElementById('lie-input-container').style.display = 'none';
-      document.getElementById('lie-submitted-msg').style.display = 'block';
+    socket.on('startVoting', ({ options, currentRound }) => {
+      currentPhase = 'VOTING';
+      if (currentRound) activeRoundNumber = currentRound;
+      currentUrgentState = false;
+      document.body.classList.remove('urgent-timer');
+
+      if (!isHost) {
+        document.getElementById('lie-form').classList.add('hidden');
+        document.getElementById('vote-form').classList.remove('hidden');
+        document.getElementById('player-status').innerText = 'Vote for the TRUTH!';
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = options
+          .filter(opt => opt.author !== socket.id)
+          .map((opt) => {
+            const actualIdx = options.findIndex(o => o.text === opt.text && o.author === opt.author);
+            return `<button class="option-btn" onclick="submitVote(${actualIdx})">${opt.text}</button>`;
+          }).join('');
+      } else {
+        playThinkingMusic(false, activeRoundNumber === 6);
+        playTickSound();
+        document.getElementById('host-status').innerText = 'Voting in progress on phones...';
+      }
+    });
+
+    function submitVote(idx) {
+      socket.emit('submitVote', { roomCode: currentRoom, optionIndex: idx });
+      document.getElementById('vote-form').classList.add('hidden');
+      document.getElementById('player-status').innerText = 'Vote recorded! Look at the main screen.';
+    }
+
+    socket.on('showReveal', ({ truth, players, currentRound, isGameOver }) => {
+      currentUrgentState = false;
+      document.body.classList.remove('urgent-timer');
 
       if (isHost) {
-        const p = players.find(x => x.name === myName);
-        if (p) p.currentLie = lie;
-        if (players.every(p => p.currentLie !== '')) startVotingStage();
-      } else {
-        hostConn.send({ type: 'SUBMIT_LIE', name: myName, lie: lie });
-      }
-    }
+        stopMusic();
+        playRoundRevealSound(currentRound);
 
-    function startVotingStage() {
-      stopTimer();
-      let choices = [];
-
-      players.forEach(p => {
-        choices.push({ text: p.currentLie, author: p.name });
-      });
-
-      choices.push({ text: currentQ.truth, author: 'TRUTH' });
-
-      let decoyIdx = 0;
-      while (choices.length < 4 && decoyIdx < currentQ.decoys.length) {
-        const decoyText = currentQ.decoys[decoyIdx];
-        if (!choices.some(c => c.text.toLowerCase() === decoyText.toLowerCase())) {
-          choices.push({ text: decoyText, author: 'SYSTEM_DECOY' });
+        if (isGameOver) {
+          currentPhase = 'GAMEOVER';
+          setTimeout(() => {
+            playGrandFinaleSound();
+            playChillTheme();
+          }, 1200);
         }
-        decoyIdx++;
+
+        document.getElementById('host-status').innerText = '';
+        const revealDiv = document.getElementById('host-reveal');
+        revealDiv.classList.remove('hidden');
+        
+        const nextBtn = document.getElementById('next-btn');
+        nextBtn.classList.remove('hidden');
+        nextBtn.innerText = isGameOver ? 'Play Again' : 'Next Round';
+
+        let leaderboard = Object.values(players)
+          .sort((a, b) => b.score - a.score)
+          .map(p => `<li><strong>${p.name}:</strong> ${p.score} pts</li>`)
+          .join('');
+
+        revealDiv.innerHTML = `
+          <h2 style="color: #00ff88; margin-bottom: 10px;">The Truth: ${truth}</h2>
+          <h3>Leaderboard:</h3>
+          <ul>${leaderboard}</ul>
+        `;
       }
+    });
 
-      choices = choices.sort(() => Math.random() - 0.5);
-
-      players.filter(p => p.name.startsWith('Bot_')).forEach(b => {
-        const valid = choices.filter(c => c.author !== b.name);
-        b.currentVote = valid[Math.floor(Math.random() * valid.length)].text;
-      });
-
-      broadcastToAll({ type: 'START_VOTE', choices, players });
-      setupVotingScreen(choices);
-    }
-
-    function setupVotingScreen(choices) {
-      showScreen('screen-vote');
-      document.getElementById('question-prompt-vote').innerHTML = currentQ.q.replace("____", '<span class="blank-hl">__________</span>');
-      document.getElementById('choices-container').style.display = 'block';
-      document.getElementById('vote-submitted-msg').style.display = 'none';
-
-      speakAnnouncer("Spot the truth among the trash.");
-
-      const container = document.getElementById('choices-container');
-      container.innerHTML = choices.map(c => {
-        const isMyLie = (c.author === myName);
-        return `<button class="choice-btn" ${isMyLie ? 'disabled style="opacity:0.4;"' : ''} onclick="submitVote('${c.text.replace(/'/g, "\\'")}')">${c.text} ${isMyLie ? '(Your Lie)' : ''}</button>`;
-      }).join('');
-
-      startTimer('timer-vote', () => {
-        const btn = container.querySelector('.choice-btn:not([disabled])');
-        if (btn && document.getElementById('choices-container').style.display !== 'none') btn.click();
-      });
-    }
-
-    function submitVote(choiceText) {
-      stopTimer();
-      playSound('click');
-      broadcastSound('click');
-      document.getElementById('choices-container').style.display = 'none';
-      document.getElementById('vote-submitted-msg').style.display = 'block';
-
-      if (isHost) {
-        const p = players.find(x => x.name === myName);
-        if (p) p.currentVote = choiceText;
-        if (players.every(p => p.currentVote !== '')) calculateAndShowReveal();
-      } else {
-        hostConn.send({ type: 'SUBMIT_VOTE', name: myName, vote: choiceText });
-      }
-    }
-
-    function calculateAndShowReveal() {
-      stopTimer();
-      stopBackgroundMusic();
-      
-      // Determine point multiplier based on question index
-      // Q 0-2 (Round 1) = 1x
-      // Q 3-4 (Round 2) = 2x
-      // Q 5 (Round 3 / Final Fibbage) = 3x
-      let multiplier = 1;
-      if (currentQuestionIndex >= 3 && currentQuestionIndex <= 4) multiplier = 2;
-      if (currentQuestionIndex === 5) multiplier = 3;
-
-      let pickedTruthCount = 0;
-
-      players.forEach(p => {
-        if (p.currentVote === currentQ.truth) {
-          p.score += (1000 * multiplier);
-          pickedTruthCount++;
-        }
-        const fooled = players.filter(other => other.currentVote === p.currentLie && other.name !== p.name);
-        p.score += (fooled.length * 500 * multiplier);
-      });
-
-      if (pickedTruthCount > 0) {
-        playSound('correct');
-        broadcastSound('correct');
-      } else {
-        playSound('fool');
-        broadcastSound('fool');
-      }
-
-      broadcastToAll({ type: 'START_REVEAL', players });
-      setupRevealScreen();
-    }
-
-    function setupRevealScreen() {
-      showScreen('screen-reveal');
-      const container = document.getElementById('reveal-container');
-
-      const truthVoters = players.filter(p => p.currentVote === currentQ.truth).map(p => p.name);
-
-      if (truthVoters.length > 0) {
-        speakAnnouncer("The actual truth was: " + currentQ.truth + ". Good job to those who guessed right.");
-      } else {
-        speakAnnouncer("Absolute disaster. Nobody found the truth, which was: " + currentQ.truth);
-      }
-
-      let multiplier = 1;
-      if (currentQuestionIndex >= 3 && currentQuestionIndex <= 4) multiplier = 2;
-      if (currentQuestionIndex === 5) multiplier = 3;
-
-      let html = `<div class="reveal-card truth">
-        <div class="reveal-answer" style="color:#1dd1a1;">TRUTH: ${currentQ.truth}</div>
-        <div class="reveal-voters">Guessed by: ${truthVoters.join(', ') || 'Nobody'} (+${1000 * multiplier} pts)</div>
-      </div>`;
-
-      players.forEach(p => {
-        const voters = players.filter(v => v.currentVote === p.currentLie).map(v => v.name);
-        html += `<div class="reveal-card">
-          <div class="reveal-answer">"${p.currentLie}"</div>
-          <div class="reveal-author">Lie written by: ${p.name}</div>
-          <div class="reveal-voters">Fooled: ${voters.join(', ') || 'Nobody'} (+${voters.length * 500 * multiplier} pts)</div>
-        </div>`;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function nextRoundOrScores() {
-      playSound('click');
-      broadcastSound('click');
-      currentQuestionIndex++;
-      broadcastToAll({ type: 'START_SCORES', players });
-      setupScoresScreen();
-    }
-
-    function setupScoresScreen() {
-      showScreen('screen-scores');
-      const container = document.getElementById('leaderboard-container');
-      const sorted = [...players].sort((a,b) => b.score - a.score);
-
-      if (sorted.length > 0) {
-        speakAnnouncer(sorted[0].name + " is currently leading the pack.");
-      }
-
-      const isGameOver = (currentQuestionIndex >= 6);
-
-      container.innerHTML = sorted.map((p, i) => `
-        <div class="reveal-card" style="display:flex; justify-content:space-between; align-items:center;">
-          <div><strong>#${i+1} ${p.name}</strong></div>
-          <div style="font-size:1.2rem; font-weight:800; color:#feca57;">${p.score} pts</div>
-        </div>
-      `).join('');
-
-      const btn = document.getElementById('host-continue-btn');
-      if (isGameOver) {
-        btn.innerText = "Play Again";
-        btn.onclick = () => { location.reload(); };
-        speakAnnouncer("Game over! " + (sorted[0] ? sorted[0].name + " wins the game!" : ""));
-      } else {
-        btn.innerText = "Next Question";
-        btn.onclick = () => { nextQuestion(); };
-      }
-    }
+    socket.on('errorMsg', (msg) => alert(msg));
   </script>
 </body>
 </html>

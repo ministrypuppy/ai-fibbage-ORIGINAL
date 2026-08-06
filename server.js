@@ -28,15 +28,15 @@ const fallbackLies = [
   "Faking a twin to skip work"
 ];
 
-// Pure Fibbage-style fill-in-the-blank trivia
-const fibbageQuestionBank = [
+// Curated humorous/risqué questions as fallback/supplement
+const partyTrivia = [
   {
-    question: "In 2012, a man in New Zealand was arrested after calling emergency services to complain about ____.",
+    question: "In 2012, a man in New Zealand was arrested after calling the emergency services to complain about ____.",
     answer: "bad weed quality",
     houseLies: ["his prostitute being late", "cold McDonald's fries", "a missing cat"]
   },
   {
-    question: "Before inventing the telephone, Alexander Graham Bell suggested answering calls with ____.",
+    question: "Before inventing the telephone, Alexander Graham Bell suggested answering phone calls with the phrase ____.",
     answer: "Ahoy",
     houseLies: ["What's crackin'", "Howdy pardner", "Speak human"]
   },
@@ -51,82 +51,11 @@ const fibbageQuestionBank = [
     houseLies: ["drinking wine", "napping under desks", "swearing at bosses"]
   },
   {
-    question: "To discourage drunk driving, a bar in Texas required patrons to pass a ____ test before leaving.",
+    question: "To discourage drunk driving, a bar in Texas instituted a policy where patrons had to pass a ____ test before leaving.",
     answer: "unicycle riding",
     houseLies: ["tongue twister", "line dancing", "origami"]
-  },
-  {
-    question: "In 2013, a man held up a bank in Chicago using a ____ as a weapon.",
-    answer: "electric toothbrush",
-    houseLies: ["frozen banana", "dildo", "guppy in a bag"]
-  },
-  {
-    question: "In Switzerland, it is illegal to own only one ____ because they get lonely.",
-    answer: "guinea pig",
-    houseLies: ["goldfish", "parrot", "hamster"]
-  },
-  {
-    question: "In 2015, police in Pennsylvania arrested a man for attempting to steal a ____ with a forklift.",
-    answer: "whole ATM",
-    houseLies: ["vending machine", "police cruiser", "Krispy Kreme dumpster"]
-  },
-  {
-    question: "Until 2016, it was illegal in France for women to wear ____ without riding a bicycle or horse.",
-    answer: "trousers",
-    houseLies: ["high heels", "berets", "sunglasses"]
-  },
-  {
-    question: "A man in Florida was arrested after trying to pay for his McDonald's order with ____.",
-    answer: "a bag of weed",
-    houseLies: ["a live alligator", "a stolen credit card statement", "Monopoly money"]
-  },
-  {
-    question: "In 2011, a man was banned from an all-you-can-eat buffet after eating ____ plates of food.",
-    answer: "12",
-    houseLies: ["30", "50", "88"]
-  },
-  {
-    question: "In Victoria, Australia, it was once illegal to change a lightbulb unless you were a licensed ____.",
-    answer: "electrician",
-    houseLies: ["plumber", "government agent", "magician"]
-  },
-  {
-    question: "In 2018, a flight had to make an emergency landing because a passenger refused to stop ____.",
-    answer: "farting",
-    houseLies: ["singing Celine Dion", "doing pushups", "climbing seat covers"]
-  },
-  {
-    question: "The town of Talkeetna, Alaska elected a ____ as its mayor for 20 years.",
-    answer: "cat",
-    houseLies: ["golden retriever", "goat", "wooden post"]
-  },
-  {
-    question: "In 2007, a man accidentally traded a 3-carat diamond ring for a ____.",
-    answer: "pepperoni pizza",
-    houseLies: ["used toaster", "pack of cigarettes", "lottery ticket"]
   }
 ];
-
-const cookieQuotes = {
-  roundStart: [
-    "Welcome back! Let's get some total lies on the board.",
-    "Round starting! Try to make your lie sound convincing.",
-    "Time for trivia! Make up something plausible."
-  ],
-  votingPhase: [
-    "All lies are in! Let's see who cooked up the best garbage.",
-    "Locked and loaded. Time to spot the truth from the bullshit."
-  ],
-  revealPhase: [
-    "And the truth is revealed! Look at those points shift.",
-    "Well, well... looks like someone actually knew the answer!"
-  ]
-};
-
-function getCookieLine(category) {
-  const lines = cookieQuotes[category];
-  return lines[Math.floor(Math.random() * lines.length)];
-}
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -137,21 +66,31 @@ function generateRoomCode() {
   return code;
 }
 
-function getNextQuestion(room) {
-  // Filter out questions already used in this room session
-  const available = fibbageQuestionBank.filter((_, idx) => !room.usedQuestions.includes(idx));
-  
-  // Reset index list if all questions were used
-  if (available.length === 0) {
-    room.usedQuestions = [];
-    return fibbageQuestionBank[Math.floor(Math.random() * fibbageQuestionBank.length)];
+async function fetchAIQuestion() {
+  // 50% chance to pull from curated party trivia pool, 50% from API categories likely to yield silly facts
+  if (Math.random() > 0.5) {
+    return partyTrivia[Math.floor(Math.random() * partyTrivia.length)];
   }
 
-  const selected = available[Math.floor(Math.random() * available.length)];
-  const originalIndex = fibbageQuestionBank.indexOf(selected);
-  room.usedQuestions.push(originalIndex);
-  
-  return selected;
+  try {
+    // Categories: General Knowledge (9), Celebrities (26), Animals (27)
+    const categories = [9, 26, 27];
+    const cat = categories[Math.floor(Math.random() * categories.length)];
+    const res = await fetch(`https://opentdb.com/api.php?amount=1&category=${cat}&type=multiple`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      const q = data.results[0];
+      const clean = (str) => str.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&').replace(/&deg;/g, '°');
+      return {
+        question: clean(q.question),
+        answer: clean(q.correct_answer),
+        houseLies: q.incorrect_answers.map(clean)
+      };
+    }
+  } catch (err) {}
+
+  return partyTrivia[Math.floor(Math.random() * partyTrivia.length)];
 }
 
 function clearRoomTimers(room) {
@@ -188,7 +127,8 @@ function triggerVotingPhase(room, cleanCode) {
   
   Object.entries(room.players).forEach(([id, p]) => {
     if (!p.currentLie || p.currentLie.length === 0) {
-      p.currentLie = fallbackLies[Math.floor(Math.random() * fallbackLies.length)];
+      const randomLie = fallbackLies[Math.floor(Math.random() * fallbackLies.length)];
+      p.currentLie = randomLie;
     }
   });
 
@@ -209,8 +149,7 @@ function triggerVotingPhase(room, cleanCode) {
     question: room.currentQuestion.question,
     options: room.options,
     multiplier: room.multiplier,
-    currentRound: room.currentRound,
-    cookieLine: getCookieLine('votingPhase')
+    currentRound: room.currentRound
   });
 
   startPhaseTimer(
@@ -247,8 +186,7 @@ function triggerRevealPhase(room, cleanCode) {
     players: room.players,
     currentRound: room.currentRound,
     multiplier: room.multiplier,
-    isGameOver: room.currentRound >= 6,
-    cookieLine: getCookieLine('revealPhase')
+    isGameOver: room.currentRound >= 6
   });
 }
 
@@ -264,7 +202,6 @@ io.on('connection', (socket) => {
       currentQuestion: null,
       options: [],
       votes: {},
-      usedQuestions: [],
       timer: null,
       timeLeft: 0
     };
@@ -284,7 +221,7 @@ io.on('connection', (socket) => {
     io.to(room.hostId).emit('updatePlayers', Object.values(room.players));
   });
 
-  socket.on('startRound', (roomCode) => {
+  socket.on('startRound', async (roomCode) => {
     const cleanCode = roomCode ? roomCode.trim().toUpperCase() : '';
     const room = rooms[cleanCode];
     if (!room) return;
@@ -302,14 +239,13 @@ io.on('connection', (socket) => {
       room.players[id].currentLie = '';
     });
 
-    const qData = getNextQuestion(room);
+    const qData = await fetchAIQuestion();
     room.currentQuestion = qData;
 
     io.to(cleanCode).emit('newRound', { 
       question: qData.question, 
       currentRound: room.currentRound,
-      multiplier: room.multiplier,
-      cookieLine: getCookieLine('roundStart')
+      multiplier: room.multiplier 
     });
 
     startPhaseTimer(
